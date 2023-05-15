@@ -23,6 +23,6 @@ class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 router = routers.SimpleRouter()
-router.register(r'allocations', AllocationViewSet)
+router.register(r'allocations', AllocationViewSet, basename='api-allocation')
 
 urlpatterns = router.urls
