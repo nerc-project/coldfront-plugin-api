@@ -9,8 +9,8 @@ from coldfront.core.allocation.models import Allocation
 
 from coldfront_plugin_api import serializers
 
-if os.getenv('PLUGIN_OIDC') == 'True':
-    AUTHENTICATION_CLASSES = [OIDCAuthentication]
+if os.getenv('PLUGIN_AUTH_OIDC') == 'True':
+    AUTHENTICATION_CLASSES = [OIDCAuthentication, SessionAuthentication]
 else:
     AUTHENTICATION_CLASSES = [SessionAuthentication, BasicAuthentication]
 
