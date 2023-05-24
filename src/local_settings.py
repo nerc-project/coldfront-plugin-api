@@ -16,7 +16,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-if os.getenv('PLUGIN_OIDC') == 'True':
+if os.getenv('PLUGIN_AUTH_OIDC') == 'True':
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append(
         'mozilla_django_oidc.contrib.drf.OIDCAuthentication',
     )
