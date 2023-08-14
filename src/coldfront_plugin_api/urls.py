@@ -16,10 +16,17 @@ else:
 
 
 class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Allocation.objects.filter(status__name='Active')
     serializer_class = serializers.AllocationSerializer
     authentication_classes = AUTHENTICATION_CLASSES
     permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        queryset = Allocation.objects.filter(status__name='Active')
+
+        if self.request.query_params.get('all') == 'true':
+            queryset = Allocation.objects.all()
+
+        return queryset
 
 
 router = routers.SimpleRouter()

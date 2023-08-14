@@ -1,0 +1,11 @@
+diff --git a/coldfront/config/urls.py b/coldfront/config/urls.py
+index 353e360..220378a 100644
+--- a/coldfront/config/urls.py
++++ b/coldfront/config/urls.py
+@@ -36,3 +36,6 @@ if 'mozilla_django_oidc' in settings.INSTALLED_APPS:
+
+ if 'django_su.backends.SuBackend' in settings.AUTHENTICATION_BACKENDS:
+     urlpatterns.append(path('su/', include('django_su.urls')))
++
++if 'coldfront_plugin_api' in settings.INSTALLED_APPS:
++    urlpatterns.append(path('api/', include('coldfront_plugin_api.urls')))
