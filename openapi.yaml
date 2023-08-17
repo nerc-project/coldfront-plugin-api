@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: ColdFront API
+  description: ColdFront API
+  version: 0.1.0
+components:
+  schemas:
+    Project:
+      type: object
+      properties:
+        description:
+          type: string
+        id:
+          type: integer
+        field_of_science:
+          type: string
+        pi:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+    Allocation:
+      type: object
+      properties:
+        description:
+          type: string
+        id:
+          type: integer
+        resource:
+          type: object
+          properties:
+            name:
+              type: string
+            resource_type:
+              type: string
+        status:
+          type: string
+        project:
+          $ref: '#/components/schemas/Project'
+        attributes:
+          type: object
+          description: JSON Dictionary of all visible attributes.
+paths:
+  /api/allocations:
+    get:
+      description: Returns all active Resource Allocations.
+      responses:
+        '200':
+          description: A list of allocations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Allocation'
+      parameters:
+        - name: all
+          in: query
+          description: Whether to include all Resource Allocations regardless of status.
+          required: false
+          schema:
+            type: boolean
