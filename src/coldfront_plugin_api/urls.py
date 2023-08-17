@@ -1,23 +1,14 @@
-import os
-
 from rest_framework import routers, viewsets
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAdminUser
-from mozilla_django_oidc.contrib.drf import OIDCAuthentication
 
 from coldfront.core.allocation.models import Allocation
 
-from coldfront_plugin_api import serializers
-
-if os.getenv('PLUGIN_AUTH_OIDC') == 'True':
-    AUTHENTICATION_CLASSES = [OIDCAuthentication, SessionAuthentication]
-else:
-    AUTHENTICATION_CLASSES = [SessionAuthentication, BasicAuthentication]
+from coldfront_plugin_api import auth, serializers
 
 
 class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.AllocationSerializer
-    authentication_classes = AUTHENTICATION_CLASSES
+    authentication_classes = auth.AUTHENTICATION_CLASSES
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
