@@ -20,7 +20,7 @@ class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-router = routers.SimpleRouter()
+router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'allocations', AllocationViewSet, basename='api-allocation')
 
 urlpatterns = router.urls
