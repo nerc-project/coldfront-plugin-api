@@ -36,7 +36,7 @@ class TestAllocation(base.TestBase):
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
 
-        response = self.admin_client.get("/api/allocations/")
+        response = self.admin_client.get("/api/allocations")
         self.assertEqual(response.status_code, 200)
         self.assertIn(allocation.id, [a["id"] for a in response.json()])
 
@@ -52,11 +52,11 @@ class TestAllocation(base.TestBase):
         self.assertEqual(allocation.status.name, "Expired")
 
         # Expired allocation will not display without ?all query
-        response = self.admin_client.get("/api/allocations/")
+        response = self.admin_client.get("/api/allocations")
         self.assertEqual(response.status_code, 200)
         self.assertNotIn(allocation.id, [a["id"] for a in response.json()])
 
         # Expired allocation shows up when using ?all query
-        response = self.admin_client.get("/api/allocations/?all=true")
+        response = self.admin_client.get("/api/allocations?all=true")
         self.assertEqual(response.status_code, 200)
         self.assertIn(allocation.id, [a["id"] for a in response.json()])
