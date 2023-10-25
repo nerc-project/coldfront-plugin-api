@@ -26,14 +26,27 @@ class TestAllocation(base.TestBase):
         client.login(username='admin', password='test1234')
         return client
 
+    @property
+    def logged_in_user_client(self):
+        client = APIClient()
+        client.login(username='cgray', password='test1234')
+        return client
+
     def test_list_groups(self):
         user = self.new_user()
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
 
         response = self.admin_client.get("/api/scim/v2/Groups")
+        desired_in_response = {
+            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+            "id": allocation.id,
+            "displayName": f"Members of allocation {allocation.id} of project {allocation.project.title}",
+            "members": []
+        }
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn(desired_in_response, response.json())
 
     def test_get_group(self):
         user = self.new_user()
@@ -117,3 +130,17 @@ class TestAllocation(base.TestBase):
             "members": []
         }
         self.assertEqual(response.json(), desired_response)
+
+    def test_normal_user_fobidden(self):
+        response = self.logged_in_user_client.get(f"/api/scim/v2/Groups")
+        self.assertEqual(response.status_code, 403)
+
+        response = self.logged_in_user_client.get(f"/api/scim/v2/Groups/1234")
+        self.assertEqual(response.status_code, 403)
+
+        response = self.logged_in_user_client.patch(
+            f"/api/scim/v2/Groups/1234",
+            data={},
+            format="json"
+        )
+        self.assertEqual(response.status_code, 403)
