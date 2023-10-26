@@ -131,7 +131,7 @@ class TestAllocation(base.TestBase):
         }
         self.assertEqual(response.json(), desired_response)
 
-    def test_normal_user_fobidden(self):
+    def test_normal_user_forbidden(self):
         response = self.logged_in_user_client.get(f"/api/scim/v2/Groups")
         self.assertEqual(response.status_code, 403)
 
