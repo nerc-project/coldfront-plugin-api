@@ -1,11 +1,13 @@
 import json
 import os
 import unittest
+from unittest import mock
+import uuid
 from os import devnull
 import sys
 
 from coldfront_plugin_api import urls
-from coldfront_plugin_api.tests.unit import base
+from coldfront_plugin_api.tests.unit import base, fakes
 
 from coldfront.core.resource import models as resource_models
 from coldfront.core.allocation import models as allocation_models
@@ -130,6 +132,61 @@ class TestAllocation(base.TestBase):
             "members": []
         }
         self.assertEqual(response.json(), desired_response)
+
+    @mock.patch(
+        "coldfront.core.user.utils.CombinedUserSearch",
+        fakes.FakeUserSearch
+    )
+    def test_add_user_fetched(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+        allocation = self.new_allocation(project, self.resource, 1)
+
+        # Attempt adding non-existing user
+        payload = {
+            "schemas": [
+                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+            ],
+            "Operations": [
+                {
+                    "op": "add",
+                    "value": {
+                        "members": [
+                            {
+                                "value": uuid.uuid4().hex
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
+                                           data=payload,
+                                           format="json")
+        self.assertEqual(response.status_code, 400)
+
+        # Attempt adding non-existing user, that exists from search
+        payload = {
+            "schemas": [
+                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+            ],
+            "Operations": [
+                {
+                    "op": "add",
+                    "value": {
+                        "members": [
+                            {
+                                "value": "fake-user-1"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
+                                           data=payload,
+                                           format="json")
+        self.assertEqual(response.status_code, 200)
 
     def test_normal_user_forbidden(self):
         response = self.logged_in_user_client.get(f"/api/scim/v2/Groups")
