@@ -1,18 +1,10 @@
-import json
-import os
-import unittest
 from unittest import mock
 import uuid
-from os import devnull
-import sys
-
-from coldfront_plugin_api import urls
-from coldfront_plugin_api.tests.unit import base, fakes
 
 from coldfront.core.resource import models as resource_models
-from coldfront.core.allocation import models as allocation_models
-from django.core.management import call_command
 from rest_framework.test import APIClient
+
+from coldfront_plugin_api.tests.unit import base, fakes
 
 
 class TestAllocation(base.TestBase):
