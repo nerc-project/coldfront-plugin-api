@@ -7,6 +7,26 @@ from rest_framework.test import APIClient
 from coldfront_plugin_api.tests.unit import base, fakes
 
 
+def get_payload_for_single_operation(operation, username):
+    return {
+        "schemas": [
+            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+        ],
+        "Operations": [
+            {
+                "op": operation,
+                "value": {
+                    "members": [
+                        {
+                            "value": username
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+
+
 class TestAllocation(base.TestBase):
 
     def setUp(self) -> None:
@@ -62,23 +82,7 @@ class TestAllocation(base.TestBase):
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
 
-        payload = {
-            "schemas": [
-                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
-            ],
-            "Operations": [
-                {
-                    "op": "add",
-                    "value": {
-                        "members": [
-                            {
-                                "value": user.username
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        payload = get_payload_for_single_operation("add", user.username)
         response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
                                            data=payload,
                                            format="json")
@@ -97,23 +101,7 @@ class TestAllocation(base.TestBase):
         response = self.admin_client.get(f"/api/scim/v2/Groups/{allocation.id}")
         self.assertEqual(response.json(), desired_response)
 
-        payload = {
-            "schemas": [
-                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
-            ],
-            "Operations": [
-                {
-                    "op": "remove",
-                    "value": {
-                        "members": [
-                            {
-                                "value": user.username
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        payload = get_payload_for_single_operation("remove", user.username)
         response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
                                            data=payload,
                                            format="json")
@@ -134,47 +122,14 @@ class TestAllocation(base.TestBase):
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
 
-        # Attempt adding non-existing user
-        payload = {
-            "schemas": [
-                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
-            ],
-            "Operations": [
-                {
-                    "op": "add",
-                    "value": {
-                        "members": [
-                            {
-                                "value": uuid.uuid4().hex
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        payload = get_payload_for_single_operation("add", uuid.uuid4().hex)
         response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
                                            data=payload,
                                            format="json")
         self.assertEqual(response.status_code, 400)
 
         # Attempt adding non-existing user, that exists from search
-        payload = {
-            "schemas": [
-                "urn:ietf:params:scim:api:messages:2.0:PatchOp"
-            ],
-            "Operations": [
-                {
-                    "op": "add",
-                    "value": {
-                        "members": [
-                            {
-                                "value": "fake-user-1"
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        payload = get_payload_for_single_operation("add", "fake-user-1")
         response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
                                            data=payload,
                                            format="json")
