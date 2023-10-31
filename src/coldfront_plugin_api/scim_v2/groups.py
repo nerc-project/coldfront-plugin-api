@@ -1,11 +1,12 @@
 from coldfront.core.allocation import signals
 from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
-from coldfront_plugin_api import auth
+from coldfront_plugin_api import auth, utils
 
 
 def allocation_to_group_view(allocation: Allocation) -> dict:
@@ -74,7 +75,11 @@ class GroupDetail(APIView):
 
             if operation["op"] == "add":
                 for submitted_user in value:
-                    user = User.objects.get(username=submitted_user)
+                    try:
+                        user = utils.get_or_fetch_user(username=submitted_user)
+                    except ObjectDoesNotExist:
+                        return Response(status=400)
+
                     au = self._set_user_status_on_allocation(
                         allocation, user, "Active"
                     )
