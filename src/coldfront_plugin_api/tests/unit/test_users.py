@@ -1,0 +1,84 @@
+from unittest import mock
+import uuid
+
+from coldfront.core.resource import models as resource_models
+from rest_framework.test import APIClient
+
+from coldfront_plugin_api.tests.unit import base, fakes
+
+
+class TestUsers(base.TestBase):
+
+    def setUp(self) -> None:
+        self.maxDiff = None
+        super().setUp()
+        self.resource = resource_models.Resource.objects.all().first()
+
+    @property
+    def admin_client(self):
+        client = APIClient()
+        client.login(username='admin', password='test1234')
+        return client
+
+    @property
+    def logged_in_user_client(self):
+        client = APIClient()
+        client.login(username='cgray', password='test1234')
+        return client
+
+    def test_create_list_detail_user(self):
+        username = uuid.uuid4().hex
+        first_name = uuid.uuid4().hex
+        last_name = uuid.uuid4().hex
+        email = f"{uuid.uuid4().hex}@example.com"
+        payload = {
+            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+            "userName": username,
+            "name": {
+                "givenName": first_name,
+                "familyName": last_name,
+            },
+            "emails": [
+                {
+                    "value": email,
+                    "type": "work",
+                    "primary": True,
+                }
+            ]
+        }
+        r = self.admin_client.post("/api/scim/v2/Users",
+                                   data=payload,
+                                   format="json")
+        self.assertEqual(r.status_code, 201)
+
+        user_dict = r.json()
+        self.assertEqual(user_dict["userName"], username)
+        self.assertEqual(user_dict["name"]["givenName"], first_name)
+        self.assertEqual(user_dict["name"]["familyName"], last_name)
+        self.assertEqual(user_dict["emails"][0]["value"], email)
+
+        r = self.admin_client.get("/api/scim/v2/Users")
+        self.assertIn(user_dict, r.json())
+
+        r = self.admin_client.get(f"/api/scim/v2/Users/{username}")
+        self.assertEqual(r.json(), user_dict)
+
+    @mock.patch(
+        "coldfront.core.user.utils.CombinedUserSearch",
+        fakes.FakeUserSearch
+    )
+    def test_create_user_minimal_fetched(self):
+        payload = {
+            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+            "userName": "fake-user-1",
+        }
+        r = self.admin_client.post("/api/scim/v2/Users",
+                                   data=payload,
+                                   format="json")
+        self.assertEqual(r.status_code, 201)
+
+        user_dict = r.json()
+        self.assertEqual(user_dict["userName"], "fake-user-1")
+        self.assertEqual(user_dict["name"]["givenName"], "fake")
+        self.assertEqual(user_dict["name"]["familyName"], "user 1")
+        self.assertEqual(user_dict["emails"][0]["value"], "fake_user_1@example.com")

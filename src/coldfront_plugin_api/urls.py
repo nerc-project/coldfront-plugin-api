@@ -2,11 +2,11 @@ from rest_framework import routers, viewsets
 from rest_framework.permissions import IsAdminUser
 
 from coldfront.core.allocation.models import Allocation
-
-from coldfront_plugin_api import auth, serializers
-from coldfront_plugin_api.scim_v2 import groups
 from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
+
+from coldfront_plugin_api import auth, serializers
+from coldfront_plugin_api.scim_v2 import groups, users
 
 
 class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -31,5 +31,7 @@ urlpatterns = router.urls
 urlpatterns += [
     path('scim/v2/Groups', groups.ListGroups.as_view()),
     path('scim/v2/Groups/<int:pk>', groups.GroupDetail.as_view()),
+    path('scim/v2/Users', users.ListUsers.as_view()),
+    path('scim/v2/Users/<str:username>', users.UserDetail.as_view())
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
