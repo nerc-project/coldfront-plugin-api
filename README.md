@@ -8,7 +8,9 @@ plugins to expose URLs, so applying the patch file at
 `patches/01_add_api_urls.patch` is required.
 
 The plugin can be enabled by adding `coldfront_plugin_api` to `INSTALLED_APPS`
-in the Django `local_settings.py`.
+in the Django `local_settings.py` file in this repo. Make sure to enable this
+settings file by setting the DJANGO_SETTINGS_MODULE env var to point to the
+aforementioned settings file. For more information: [Django settings](https://docs.djangoproject.com/en/4.2/topics/settings/#designating-the-settings)
 
 If the environment variable `PLUGIN_AUTH_OIDC` is detected, authentication
 will be done through `mozilla-django-oidc`, using the same configuration
