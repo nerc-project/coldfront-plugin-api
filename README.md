@@ -7,7 +7,7 @@ ColdFront doesn't currently provide a mechanism for allowing out of tree
 plugins to expose URLs, so applying the patch file at
 `patches/01_add_api_urls.patch` is required.
 
-The plugin can be enabled by adding `coldfront_plugin_api` to `ENABLED_APPS`
+The plugin can be enabled by adding `coldfront_plugin_api` to `INSTALLED_APPS`
 in the Django `local_settings.py`.
 
 If the environment variable `PLUGIN_AUTH_OIDC` is detected, authentication
