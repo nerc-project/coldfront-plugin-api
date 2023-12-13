@@ -60,7 +60,6 @@ class GroupDetail(APIView):
         return Response(allocation_to_group_view(allocation))
 
     def patch(self, request, pk, format=None):
-
         if (
                 request.data["schemas"] != ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
                 or request.data.get("path", "members") != "members"
