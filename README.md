@@ -3,10 +3,6 @@ REST API plugin for ColdFront.
 
 See `openapi.yaml` for OpenAPI specification.
 
-ColdFront doesn't currently provide a mechanism for allowing out of tree
-plugins to expose URLs, so applying the patch file at
-`patches/01_add_api_urls.patch` is required.
-
 The plugin can be enabled through 2 steps:
 1. Add `coldfront_plugin_api` to `INSTALLED_APPS`
 in the Django `local_settings.py` file located in this repo. Make sure to enable this
