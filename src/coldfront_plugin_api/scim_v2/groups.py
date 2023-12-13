@@ -1,5 +1,6 @@
 from coldfront.core.allocation import signals
-from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice
+from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice # Coldfront's Allocation Models
+from coldfront.core.project.models import Project, ProjectUser, ProjectUserStatusChoice, ProjectUserRoleChoice
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
@@ -59,11 +60,16 @@ class GroupDetail(APIView):
         return Response(allocation_to_group_view(allocation))
 
     def patch(self, request, pk, format=None):
+
+        print("Got Data")
+
         if (
                 request.data["schemas"] != ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
                 or request.data.get("path", "members") != "members"
         ):
             return Response(status=400)
+        
+        print("Processing")
 
         allocation = Allocation.objects.get(pk=pk)
         for operation in request.data["Operations"]:
@@ -117,3 +123,26 @@ class GroupDetail(APIView):
                 status=AllocationUserStatusChoice.objects.get(name=status)
             )
         return au
+    
+    @staticmethod
+    def _set_user_on_project(project, user, status, role, enable_notifications):
+        pu = ProjectUser.objects.filter(
+            project=project,
+            user=user
+        ).first() # Why first, can't we assume this is always unique?
+
+        if pu:
+            pu.status = ProjectUserStatusChoice.objects.get(name=status)
+            pu.role = ProjectUserRoleChoice.objects.get(name=role)
+            pu.enable_notifications = enable_notifications
+        else:
+            pu = ProjectUser.objects.create(
+                project=project,
+                user=user,
+                status=ProjectUserStatusChoice.objects.get(name=status),
+                role=ProjectUserRoleChoice.objects.get(name=role),
+                enable_notifications = enable_notifications
+            )
+            pu.save()
+        return pu
+         
