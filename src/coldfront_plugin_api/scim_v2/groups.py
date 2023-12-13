@@ -83,6 +83,10 @@ class GroupDetail(APIView):
                     except ObjectDoesNotExist:
                         return Response(status=400)
 
+                    self._set_user_on_project(
+                        project, user, "Active", "User", False
+                    )
+                    
                     au = self._set_user_status_on_allocation(
                         allocation, user, "Active"
                     )
@@ -90,9 +94,6 @@ class GroupDetail(APIView):
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
 
-                    self._set_user_on_project(
-                        project, user, "Active", "User", False
-                    )
 
             elif operation["op"] == "remove":
                 for submitted_user in value:
@@ -135,8 +136,6 @@ class GroupDetail(APIView):
 
         if pu:
             pu.status = ProjectUserStatusChoice.objects.get(name=status)
-            pu.role = ProjectUserRoleChoice.objects.get(name=role)
-            pu.enable_notifications = enable_notifications
         else:
             pu = ProjectUser.objects.create(
                 project=project,
