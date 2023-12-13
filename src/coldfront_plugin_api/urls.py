@@ -8,6 +8,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from coldfront_plugin_api import auth, serializers
 from coldfront_plugin_api.scim_v2 import groups, users
 
+
 class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = serializers.AllocationSerializer
     authentication_classes = auth.AUTHENTICATION_CLASSES
