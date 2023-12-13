@@ -72,6 +72,8 @@ class GroupDetail(APIView):
         print("Processing")
 
         allocation = Allocation.objects.get(pk=pk)
+        project = allocation.project
+
         for operation in request.data["Operations"]:
             value = operation["value"]
             if type(value) == dict:
@@ -92,6 +94,11 @@ class GroupDetail(APIView):
                     signals.allocation_activate_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
+
+                    self._set_user_on_project(
+                        project, user, "Active", "User", False
+                    )
+
             elif operation["op"] == "remove":
                 for submitted_user in value:
                     user = User.objects.get(username=submitted_user)
@@ -100,6 +107,10 @@ class GroupDetail(APIView):
                     )
                     signals.allocation_remove_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
+                    )
+
+                    self._set_user_on_project(
+                        project, user, "Removed", "User", False
                     )
             else:
                 # Replace is not implemented yet.
