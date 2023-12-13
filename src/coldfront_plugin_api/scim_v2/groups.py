@@ -127,7 +127,7 @@ class GroupDetail(APIView):
         return au
     
     @staticmethod
-    def _set_user_on_project(project, user, status, role, enable_notifications):
+    def _set_user_status_on_project(project, user, status, role, enable_notifications):
         pu = ProjectUser.objects.filter(
             project=project,
             user=user
