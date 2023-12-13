@@ -103,7 +103,6 @@ class GroupDetail(APIView):
                     signals.allocation_remove_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
-
             else:
                 # Replace is not implemented yet.
                 raise NotImplementedError
