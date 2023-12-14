@@ -94,7 +94,6 @@ class GroupDetail(APIView):
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
 
-
             elif operation["op"] == "remove":
                 for submitted_user in value:
                     user = User.objects.get(username=submitted_user)
