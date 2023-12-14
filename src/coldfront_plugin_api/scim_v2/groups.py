@@ -84,7 +84,7 @@ class GroupDetail(APIView):
                         return Response(status=400)
 
                     self._set_user_status_on_project(
-                        project, user, "Active", "User", False
+                        project, user, "Active", "User", True
                     )
                     
                     au = self._set_user_status_on_allocation(
@@ -143,5 +143,6 @@ class GroupDetail(APIView):
                 role=ProjectUserRoleChoice.objects.get(name=role),
                 enable_notifications = enable_notifications
             )
+            pu.save()
         return pu
          
