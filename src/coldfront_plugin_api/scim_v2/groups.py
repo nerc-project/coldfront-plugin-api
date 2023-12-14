@@ -83,7 +83,7 @@ class GroupDetail(APIView):
                     except ObjectDoesNotExist:
                         return Response(status=400)
 
-                    self._set_user_on_project(
+                    self._set_user_status_on_project(
                         project, user, "Active", "User", False
                     )
                     
