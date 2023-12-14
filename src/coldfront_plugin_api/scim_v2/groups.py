@@ -143,6 +143,5 @@ class GroupDetail(APIView):
                 role=ProjectUserRoleChoice.objects.get(name=role),
                 enable_notifications = enable_notifications
             )
-            pu.save()
         return pu
          
