@@ -135,6 +135,7 @@ class GroupDetail(APIView):
 
         if pu:
             pu.status = ProjectUserStatusChoice.objects.get(name=status)
+            pu.save()
         else:
             pu = ProjectUser.objects.create(
                 project=project,
@@ -143,6 +144,5 @@ class GroupDetail(APIView):
                 role=ProjectUserRoleChoice.objects.get(name=role),
                 enable_notifications = enable_notifications
             )
-            pu.save()
         return pu
          
