@@ -83,15 +83,15 @@ class GroupDetail(APIView):
                     except ObjectDoesNotExist:
                         return Response(status=400)
 
+                    self._set_user_status_on_project(
+                        project, user, "Active", "User", True
+                    )
+                    
                     au = self._set_user_status_on_allocation(
                         allocation, user, "Active"
                     )
                     signals.allocation_activate_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
-                    )
-
-                    self._set_user_on_project(
-                        project, user, "Active", "User", False
                     )
 
             elif operation["op"] == "remove":
@@ -103,7 +103,6 @@ class GroupDetail(APIView):
                     signals.allocation_remove_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
-
             else:
                 # Replace is not implemented yet.
                 raise NotImplementedError
@@ -128,7 +127,7 @@ class GroupDetail(APIView):
         return au
     
     @staticmethod
-    def _set_user_on_project(project, user, status, role, enable_notifications):
+    def _set_user_status_on_project(project, user, status, role, enable_notifications):
         pu = ProjectUser.objects.filter(
             project=project,
             user=user
@@ -136,8 +135,7 @@ class GroupDetail(APIView):
 
         if pu:
             pu.status = ProjectUserStatusChoice.objects.get(name=status)
-            pu.role = ProjectUserRoleChoice.objects.get(name=role)
-            pu.enable_notifications = enable_notifications
+            pu.save()
         else:
             pu = ProjectUser.objects.create(
                 project=project,
