@@ -1,5 +1,6 @@
 from coldfront.core.allocation import signals
 from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice
+from coldfront.core.project.models import Project, ProjectUser, ProjectUserStatusChoice, ProjectUserRoleChoice
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
@@ -66,6 +67,8 @@ class GroupDetail(APIView):
             return Response(status=400)
 
         allocation = Allocation.objects.get(pk=pk)
+        project = allocation.project
+
         for operation in request.data["Operations"]:
             value = operation["value"]
             if type(value) == dict:
@@ -80,12 +83,17 @@ class GroupDetail(APIView):
                     except ObjectDoesNotExist:
                         return Response(status=400)
 
+                    self._set_user_status_on_project(
+                        project, user, "Active", "User", True
+                    )
+                    
                     au = self._set_user_status_on_allocation(
                         allocation, user, "Active"
                     )
                     signals.allocation_activate_user.send(
                         sender=self.__class__, allocation_user_pk=au.pk,
                     )
+
             elif operation["op"] == "remove":
                 for submitted_user in value:
                     user = User.objects.get(username=submitted_user)
@@ -117,3 +125,24 @@ class GroupDetail(APIView):
                 status=AllocationUserStatusChoice.objects.get(name=status)
             )
         return au
+    
+    @staticmethod
+    def _set_user_status_on_project(project, user, status, role, enable_notifications):
+        pu = ProjectUser.objects.filter(
+            project=project,
+            user=user
+        ).first()
+
+        if pu:
+            pu.status = ProjectUserStatusChoice.objects.get(name=status)
+            pu.save()
+        else:
+            pu = ProjectUser.objects.create(
+                project=project,
+                user=user,
+                status=ProjectUserStatusChoice.objects.get(name=status),
+                role=ProjectUserRoleChoice.objects.get(name=role),
+                enable_notifications = enable_notifications
+            )
+        return pu
+         
