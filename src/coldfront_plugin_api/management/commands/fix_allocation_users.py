@@ -1,5 +1,5 @@
-from django.core.management.base import BaseCommand, CommandError
-from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice
+from django.core.management.base import BaseCommand
+from coldfront.core.allocation.models import AllocationUser
 from coldfront.core.project.models import Project, ProjectUser, ProjectUserStatusChoice, ProjectUserRoleChoice
 
 import logging
