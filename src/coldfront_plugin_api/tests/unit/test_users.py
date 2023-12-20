@@ -2,6 +2,7 @@ from unittest import mock
 import uuid
 
 from coldfront.core.resource import models as resource_models
+from coldfront.core.user.models import User
 from rest_framework.test import APIClient
 
 from coldfront_plugin_api.tests.unit import base, fakes
@@ -82,3 +83,11 @@ class TestUsers(base.TestBase):
         self.assertEqual(user_dict["name"]["givenName"], "fake")
         self.assertEqual(user_dict["name"]["familyName"], "user 1")
         self.assertEqual(user_dict["emails"][0]["value"], "fake_user_1@example.com")
+
+    def test_reseponse_404(self):
+        # Make a http request to scim endpoint
+        fake_username = "9999"
+        self.assertFalse(User.objects.filter(username=fake_username).exists())
+
+        r = self.admin_client.get("/api/scim/v2/Users/9999")
+        self.assertEqual(r.status_code, 404)

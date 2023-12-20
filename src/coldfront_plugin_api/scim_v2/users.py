@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
@@ -108,5 +109,8 @@ class UserDetail(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request, username, format=None):
-        allocation = User.objects.get(username=username)
+        try:
+            allocation = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response(status=404)
         return Response(user_to_api_representation(allocation))
