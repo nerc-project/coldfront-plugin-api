@@ -1,16 +1,19 @@
 from django.core.management import call_command
 
-from coldfront.core.allocation.models import AllocationUser, Allocation, AllocationUserStatusChoice
+from coldfront.core.allocation.models import (
+    AllocationUser,
+    Allocation,
+    AllocationUserStatusChoice,
+)
 from coldfront.core.project.models import ProjectUser
 from coldfront_plugin_api.tests.unit import base
 
 from unittest.mock import patch
 
-class TestFixAllocation(base.TestBase):
 
+class TestFixAllocation(base.TestBase):
     @patch("coldfront_plugin_api.management.commands.fix_allocation_users.logger")
     def test_command_output(self, mock_logger):
-
         call_command("fix_allocation_users")
         self.assertEqual(0, mock_logger.warn.call_count)
 
@@ -21,7 +24,7 @@ class TestFixAllocation(base.TestBase):
         AllocationUser.objects.create(
             user=user,
             allocation=allocation,
-            status=AllocationUserStatusChoice.objects.get(name="Active")
+            status=AllocationUserStatusChoice.objects.get(name="Active"),
         )
 
         call_command("fix_allocation_users")
