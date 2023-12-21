@@ -85,7 +85,6 @@ class TestUsers(base.TestBase):
         self.assertEqual(user_dict["emails"][0]["value"], "fake_user_1@example.com")
 
     def test_reseponse_404(self):
-        # Make a http request to scim endpoint
         fake_username = "9999"
         self.assertFalse(User.objects.filter(username=fake_username).exists())
 
