@@ -114,7 +114,7 @@ class ScimClient(object):
                 print(f"Added user {username} to allocation {allocation}.")
 
 
-def get_sanitized_project_name(name):
+def get_sanitized_name(name):
     '''
     Returns a sanitized name that only contains lowercase
     alphanumeric characters and dashes (not leading or trailing.)
