@@ -14,6 +14,7 @@ corresponding to a service account in Keycloak.
 import csv
 import logging
 import os
+import re
 import sys
 
 import requests
@@ -113,6 +114,21 @@ class ScimClient(object):
                 print(f"Added user {username} to allocation {allocation}.")
 
 
+def get_sanitized_project_name(name):
+    '''
+    Returns a sanitized name that only contains lowercase
+    alphanumeric characters and dashes (not leading or trailing.)
+    '''
+    name = name.lower()
+
+    # replace special characters with dashes
+    name = re.sub('[^a-z0-9-]', '-', name)
+
+    # remove repeated and trailing dashes
+    name = re.sub('-+', '-', name).strip('-')
+    return name
+
+
 def main():
     client = ScimClient(
         sys.argv[2],
@@ -132,6 +148,10 @@ def main():
                                email=row[0])
             client.add_user_to_group(username=row[0],
                                      allocation=row[3])
+
+            # Add to rhods-notebook namespace
+            sanitized_name = get_sanitized_name(row[0])
+            os.system(f"oc -n rhods-notebooks create clusterrolebinding --clusterrole=edit --user={row[0]}")
 
 
 if __name__ == "__main__":
