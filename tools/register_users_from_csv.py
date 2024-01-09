@@ -151,7 +151,7 @@ def main():
 
             # Add to rhods-notebook namespace
             sanitized_name = get_sanitized_name(row[0])
-            os.system(f"oc -n rhods-notebooks create clusterrolebinding --clusterrole=edit --user={row[0]}")
+            os.system(f"oc -n rhods-notebooks create clusterrolebinding {sanitized_name} --clusterrole=edit --user={row[0]}")
 
 
 if __name__ == "__main__":
