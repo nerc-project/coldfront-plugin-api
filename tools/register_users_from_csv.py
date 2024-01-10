@@ -58,7 +58,7 @@ class ScimClient(object):
         r = self.session.get(url)
         if r.status_code == 200:
             print(f"User {username} exists.")
-        if r.status_code == 404:
+        if r.status_code in [404, 500]:
             print(f"Creating user {username}.")
             payload = {
                 "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
@@ -151,7 +151,7 @@ def main():
 
             # Add to rhods-notebook namespace
             sanitized_name = get_sanitized_name(row[0])
-            os.system(f"oc -n rhods-notebooks create rolebinding {sanitized_name} --clusterrole=edit --user={row[0]}")
+            os.system(f"oc -n rhods-notebooks create rolebinding {sanitized_name} --clusterrole=edit --user={row[0]} --as system:admin")
 
 
 if __name__ == "__main__":
