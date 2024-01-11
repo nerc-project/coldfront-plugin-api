@@ -45,6 +45,11 @@ def get_or_fetch_user(username):
         if not found:
             raise
 
-        user = create_user(**found)
+        user = create_user(
+            username=username,
+            first_name=found.get("first_name", ""),
+            last_name=found.get("last_name", ""),
+            email=found.get("email", ""),
+        )
 
     return user

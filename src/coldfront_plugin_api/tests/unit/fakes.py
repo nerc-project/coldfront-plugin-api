@@ -3,7 +3,8 @@ FAKE_USERS = {
         "username": "fake-user-1",
         "first_name": "fake",
         "last_name": "user 1",
-        "email": "fake_user_1@example.com"
+        "email": "fake_user_1@example.com",
+        "source": "Fake Source"
     }
 }
 
