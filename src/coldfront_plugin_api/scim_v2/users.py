@@ -92,7 +92,12 @@ class ListUsers(APIView):
                 "email": email_list[0].get("value", "")
             }
 
-        user = utils.create_user(**found)
+        user = utils.create_user(
+            username=username,
+            email=found.get("email", ""),
+            first_name=found.get("first_name", ""),
+            last_name=found.get("last_name", ""),
+        )
 
         return Response(user_to_api_representation(user), 201)
 
