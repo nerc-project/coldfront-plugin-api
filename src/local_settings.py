@@ -26,3 +26,9 @@ if os.getenv('PLUGIN_AUTH_OIDC') == 'True':
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append(
         'mozilla_django_oidc.contrib.drf.OIDCAuthentication',
     )
+
+# Settings for django_scim module
+SCIM_SERVICE_PROVIDER = {
+    'NETLOC': 'localhost',
+    'USER_ADAPTER' : 'coldfront_plugin_api.scim_v2.adapter_user.SCIMColdfrontUser'
+}
