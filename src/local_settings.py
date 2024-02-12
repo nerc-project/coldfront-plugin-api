@@ -32,4 +32,5 @@ SCIM_SERVICE_PROVIDER = {
     'NETLOC': 'localhost',
     'USER_ADAPTER' : 'coldfront_plugin_api.scim_v2.adapter_user.SCIMColdfrontUser',
     'USER_FILTER_PARSER' : 'coldfront_plugin_api.scim_v2.filters.ColdfrontUserFilterQuery',
+    'GET_IS_AUTHENTICATED_PREDICATE': 'coldfront_plugin_api.utils.is_user_superuser'
 }
