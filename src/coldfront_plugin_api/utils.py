@@ -18,8 +18,7 @@ def find_user(username):
 
 
 def create_user(username, first_name, last_name, email):
-    user_obj, _ = User.objects.get_or_create(
-        username=username)
+    user_obj, _ = User.objects.get_or_create(username=username)
     user_obj.first_name = first_name
     user_obj.last_name = last_name
     user_obj.email = email
@@ -53,3 +52,7 @@ def get_or_fetch_user(username):
         )
 
     return user
+
+
+def is_user_superuser(user: User):
+    return user.is_superuser
