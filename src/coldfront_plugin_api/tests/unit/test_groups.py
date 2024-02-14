@@ -9,26 +9,12 @@ from coldfront_plugin_api.tests.unit import base, fakes
 
 def get_payload_for_single_operation(operation, username):
     return {
-        "schemas": [
-            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
-        ],
-        "Operations": [
-            {
-                "op": operation,
-                "value": {
-                    "members": [
-                        {
-                            "value": username
-                        }
-                    ]
-                }
-            }
-        ]
+        "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+        "Operations": [{"op": operation, "value": {"members": [{"value": username}]}}],
     }
 
 
 class TestAllocation(base.TestBase):
-
     def setUp(self) -> None:
         self.maxDiff = None
         super().setUp()
@@ -37,13 +23,13 @@ class TestAllocation(base.TestBase):
     @property
     def admin_client(self):
         client = APIClient()
-        client.login(username='admin', password='test1234')
+        client.login(username="admin", password="test1234")
         return client
 
     @property
     def logged_in_user_client(self):
         client = APIClient()
-        client.login(username='cgray', password='test1234')
+        client.login(username="cgray", password="test1234")
         return client
 
     def test_list_groups(self):
@@ -56,7 +42,7 @@ class TestAllocation(base.TestBase):
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
             "id": allocation.id,
             "displayName": f"Members of allocation {allocation.id} of project {allocation.project.title}",
-            "members": []
+            "members": [],
         }
 
         self.assertEqual(response.status_code, 200)
@@ -73,7 +59,7 @@ class TestAllocation(base.TestBase):
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
             "id": allocation.id,
             "displayName": f"Members of allocation {allocation.id} of project {allocation.project.title}",
-            "members": []
+            "members": [],
         }
         self.assertEqual(response.json(), desired_response)
 
@@ -83,68 +69,65 @@ class TestAllocation(base.TestBase):
         allocation = self.new_allocation(project, self.resource, 1)
 
         payload = get_payload_for_single_operation("add", user.username)
-        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
-                                           data=payload,
-                                           format="json")
+        response = self.admin_client.patch(
+            f"/api/scim/v2/Groups/{allocation.id}", data=payload, format="json"
+        )
         self.assertEqual(response.status_code, 200)
 
         desired_response = {
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
             "id": allocation.id,
             "displayName": f"Members of allocation {allocation.id} of project {allocation.project.title}",
-            "members": [{
-                "value": user.username,
-                "$ref": user.username,
-                "display": user.username,
-            }]
+            "members": [
+                {
+                    "value": user.username,
+                    "$ref": user.username,
+                    "display": user.username,
+                }
+            ],
         }
         response = self.admin_client.get(f"/api/scim/v2/Groups/{allocation.id}")
         self.assertEqual(response.json(), desired_response)
 
         payload = get_payload_for_single_operation("remove", user.username)
-        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
-                                           data=payload,
-                                           format="json")
+        response = self.admin_client.patch(
+            f"/api/scim/v2/Groups/{allocation.id}", data=payload, format="json"
+        )
         desired_response = {
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
             "id": allocation.id,
             "displayName": f"Members of allocation {allocation.id} of project {allocation.project.title}",
-            "members": []
+            "members": [],
         }
         self.assertEqual(response.json(), desired_response)
 
-    @mock.patch(
-        "coldfront.core.user.utils.CombinedUserSearch",
-        fakes.FakeUserSearch
-    )
+    @mock.patch("coldfront.core.user.utils.CombinedUserSearch", fakes.FakeUserSearch)
     def test_add_user_fetched(self):
         user = self.new_user()
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
 
         payload = get_payload_for_single_operation("add", uuid.uuid4().hex)
-        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
-                                           data=payload,
-                                           format="json")
+        response = self.admin_client.patch(
+            f"/api/scim/v2/Groups/{allocation.id}", data=payload, format="json"
+        )
         self.assertEqual(response.status_code, 400)
 
         # Attempt adding non-existing user, that exists from search
         payload = get_payload_for_single_operation("add", "fake-user-1")
-        response = self.admin_client.patch(f"/api/scim/v2/Groups/{allocation.id}",
-                                           data=payload,
-                                           format="json")
+        response = self.admin_client.patch(
+            f"/api/scim/v2/Groups/{allocation.id}", data=payload, format="json"
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_normal_user_forbidden(self):
-        response = self.logged_in_user_client.get(f"/api/scim/v2/Groups")
+        response = self.logged_in_user_client.get("/api/scim/v2/Groups")
         self.assertEqual(response.status_code, 403)
 
-        response = self.logged_in_user_client.get(f"/api/scim/v2/Groups/1234")
+        response = self.logged_in_user_client.get("/api/scim/v2/Groups/1234")
         self.assertEqual(response.status_code, 403)
 
         response = self.logged_in_user_client.patch(
-            f"/api/scim/v2/Groups/1234",
-            data={},
-            format="json"
+            "/api/scim/v2/Groups/1234", data={}, format="json"
         )
         self.assertEqual(response.status_code, 403)

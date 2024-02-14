@@ -1,6 +1,14 @@
 from coldfront.core.allocation import signals
-from coldfront.core.allocation.models import Allocation, AllocationUser, AllocationUserStatusChoice
-from coldfront.core.project.models import Project, ProjectUser, ProjectUserStatusChoice, ProjectUserRoleChoice
+from coldfront.core.allocation.models import (
+    Allocation,
+    AllocationUser,
+    AllocationUserStatusChoice,
+)
+from coldfront.core.project.models import (
+    ProjectUser,
+    ProjectUserStatusChoice,
+    ProjectUserRoleChoice,
+)
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
@@ -20,8 +28,11 @@ def allocation_to_group_view(allocation: Allocation) -> dict:
                 "value": x.user.username,
                 "$ref": x.user.username,
                 "display": x.user.username,
-            } for x in AllocationUser.objects.filter(allocation=allocation,status__name="Active")
-        ]
+            }
+            for x in AllocationUser.objects.filter(
+                allocation=allocation, status__name="Active"
+            )
+        ],
     }
 
 
@@ -32,6 +43,7 @@ class ListGroups(APIView):
     * Requires token authentication.
     * Only admin users are able to access this view.
     """
+
     authentication_classes = auth.AUTHENTICATION_CLASSES
     permission_classes = [IsAdminUser]
 
@@ -52,6 +64,7 @@ class GroupDetail(APIView):
     * Requires token authentication.
     * Only admin users are able to access this view.
     """
+
     authentication_classes = auth.AUTHENTICATION_CLASSES
     permission_classes = [IsAdminUser]
 
@@ -61,8 +74,8 @@ class GroupDetail(APIView):
 
     def patch(self, request, pk, format=None):
         if (
-                request.data["schemas"] != ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
-                or request.data.get("path", "members") != "members"
+            request.data["schemas"] != ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+            or request.data.get("path", "members") != "members"
         ):
             return Response(status=400)
 
@@ -71,9 +84,9 @@ class GroupDetail(APIView):
 
         for operation in request.data["Operations"]:
             value = operation["value"]
-            if type(value) == dict:
+            if isinstance(value, dict):
                 value = [x["value"] for x in operation["value"]["members"]]
-            elif type(value) == list:
+            elif isinstance(value, list):
                 value = [x["value"] for x in operation["value"]]
 
             if operation["op"] == "add":
@@ -86,12 +99,11 @@ class GroupDetail(APIView):
                     self._set_user_status_on_project(
                         project, user, "Active", "User", True
                     )
-                    
-                    au = self._set_user_status_on_allocation(
-                        allocation, user, "Active"
-                    )
+
+                    au = self._set_user_status_on_allocation(allocation, user, "Active")
                     signals.allocation_activate_user.send(
-                        sender=self.__class__, allocation_user_pk=au.pk,
+                        sender=self.__class__,
+                        allocation_user_pk=au.pk,
                     )
 
             elif operation["op"] == "remove":
@@ -101,7 +113,8 @@ class GroupDetail(APIView):
                         allocation, user, "Removed"
                     )
                     signals.allocation_remove_user.send(
-                        sender=self.__class__, allocation_user_pk=au.pk,
+                        sender=self.__class__,
+                        allocation_user_pk=au.pk,
                     )
             else:
                 # Replace is not implemented yet.
@@ -111,10 +124,7 @@ class GroupDetail(APIView):
 
     @staticmethod
     def _set_user_status_on_allocation(allocation, user, status):
-        au = AllocationUser.objects.filter(
-            allocation=allocation,
-            user=user
-        ).first()
+        au = AllocationUser.objects.filter(allocation=allocation, user=user).first()
         if au:
             au.status = AllocationUserStatusChoice.objects.get(name=status)
             au.save()
@@ -122,16 +132,13 @@ class GroupDetail(APIView):
             au = AllocationUser.objects.create(
                 allocation=allocation,
                 user=user,
-                status=AllocationUserStatusChoice.objects.get(name=status)
+                status=AllocationUserStatusChoice.objects.get(name=status),
             )
         return au
-    
+
     @staticmethod
     def _set_user_status_on_project(project, user, status, role, enable_notifications):
-        pu = ProjectUser.objects.filter(
-            project=project,
-            user=user
-        ).first()
+        pu = ProjectUser.objects.filter(project=project, user=user).first()
 
         if pu:
             pu.status = ProjectUserStatusChoice.objects.get(name=status)
@@ -142,7 +149,6 @@ class GroupDetail(APIView):
                 user=user,
                 status=ProjectUserStatusChoice.objects.get(name=status),
                 role=ProjectUserRoleChoice.objects.get(name=role),
-                enable_notifications = enable_notifications
+                enable_notifications=enable_notifications,
             )
         return pu
-         

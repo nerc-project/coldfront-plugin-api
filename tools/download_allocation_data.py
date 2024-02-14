@@ -19,11 +19,10 @@ logger = logging.getLogger()
 
 
 class ColdFrontClient(object):
-
     def __init__(self, keycloak_url, keycloak_client_id, keycloak_client_secret):
-        self.session = self.get_session(keycloak_url,
-                                        keycloak_client_id,
-                                        keycloak_client_secret)
+        self.session = self.get_session(
+            keycloak_url, keycloak_client_id, keycloak_client_secret
+        )
 
     @staticmethod
     def get_session(keycloak_url, keycloak_client_id, keycloak_client_secret):
@@ -49,12 +48,12 @@ class ColdFrontClient(object):
 def main():
     client = ColdFrontClient(
         "https://keycloak.mss.mghpcc.org",
-        os.environ.get('CLIENT_ID'),
-        os.environ.get('CLIENT_SECRET')
+        os.environ.get("CLIENT_ID"),
+        os.environ.get("CLIENT_SECRET"),
     )
     r = client.session.get(sys.argv[1])
 
-    with open(sys.argv[2], 'w') as output:
+    with open(sys.argv[2], "w") as output:
         json.dump(r.json(), output)
 
 
