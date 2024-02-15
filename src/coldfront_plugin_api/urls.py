@@ -6,7 +6,6 @@ from coldfront.core.allocation.models import Allocation
 from django_scim import views as scim_views
 
 from coldfront_plugin_api import auth, serializers
-from coldfront_plugin_api.scim_v2 import groups
 
 
 class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -31,8 +30,8 @@ router.register(r"allocations", AllocationViewSet, basename="api-allocation")
 urlpatterns = router.urls
 
 urlpatterns += [
-    path("scim/v2/Groups", groups.ListGroups.as_view()),
-    path("scim/v2/Groups/<int:pk>", groups.GroupDetail.as_view()),
+    path("scim/v2/Groups", scim_views.GroupsView.as_view(), name="groups"),
+    path("scim/v2/Groups/<int:uuid>", scim_views.GroupsView.as_view(), name="groups"),
     path("scim/v2", scim_views.SCIMView.as_view(implemented=False), name="root"),
     path("scim/v2/Users", scim_views.UsersView.as_view(), name="users"),
     path("scim/v2/Users/<str:uuid>", scim_views.UsersView.as_view(), name="users"),

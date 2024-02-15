@@ -1,6 +1,6 @@
 from coldfront.core.user import utils as user_utils
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 
 
 def find_user(username):
@@ -55,4 +55,11 @@ def get_or_fetch_user(username):
 
 
 def is_user_superuser(user: User):
-    return user.is_superuser
+    """
+    As a temporary hack, this function will handle raising the appropriate 403 error if
+    user is authenticated, but not superuser
+    """
+    if user.is_authenticated and not user.is_superuser:
+        raise PermissionDenied
+    else:
+        return user.is_authenticated
