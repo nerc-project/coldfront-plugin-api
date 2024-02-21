@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 from coldfront.core.allocation.models import AllocationUser
 from coldfront.core.project.models import (
-    Project,
     ProjectUser,
     ProjectUserStatusChoice,
     ProjectUserRoleChoice,
@@ -35,7 +34,7 @@ class Command(BaseCommand):
 
             if not p_user:
                 if options["apply"]:
-                    new_p_user = ProjectUser.objects.create(
+                    ProjectUser.objects.create(
                         project=project,
                         user=user,
                         status=ProjectUserStatusChoice.objects.get(name="Active"),

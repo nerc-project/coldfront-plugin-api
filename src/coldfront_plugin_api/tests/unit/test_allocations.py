@@ -1,10 +1,5 @@
-import json
-import os
-import unittest
 from os import devnull
 import sys
-
-from coldfront_plugin_api import urls
 
 from coldfront.core.allocation import models as allocation_models
 from django.core.management import call_command
@@ -13,7 +8,6 @@ from rest_framework.test import APIClient
 
 
 class TestAllocation(base.TestBase):
-
     def setUp(self) -> None:
         # Otherwise output goes to the terminal for every test that is run
         backup, sys.stdout = sys.stdout, open(devnull, "a")
@@ -22,13 +16,12 @@ class TestAllocation(base.TestBase):
         call_command("register_cloud_attributes")
         sys.stdout = backup
 
-        self.resource = self.new_resource(name="Devstack",
-                                          auth_url="http://localhost")
+        self.resource = self.new_resource(name="Devstack", auth_url="http://localhost")
 
     @property
     def admin_client(self):
         client = APIClient()
-        client.login(username='admin', password='test1234')
+        client.login(username="admin", password="test1234")
         return client
 
     def test_list_allocations(self):
@@ -47,7 +40,9 @@ class TestAllocation(base.TestBase):
         user = self.new_user()
         project = self.new_project(pi=user)
         allocation = self.new_allocation(project, self.resource, 1)
-        allocation.status = allocation_models.AllocationStatusChoice.objects.get(name="Expired")
+        allocation.status = allocation_models.AllocationStatusChoice.objects.get(
+            name="Expired"
+        )
         allocation.save()
         self.assertEqual(allocation.status.name, "Expired")
 

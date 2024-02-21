@@ -7,14 +7,7 @@ from coldfront.core.allocation.models import Project
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = [
-            'id',
-            'title',
-            'pi',
-            'description',
-            'field_of_science',
-            'status'
-        ]
+        fields = ["id", "title", "pi", "description", "field_of_science", "status"]
 
     pi = serializers.SerializerMethodField()
     field_of_science = serializers.SerializerMethodField()
@@ -33,14 +26,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 class AllocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Allocation
-        fields = [
-            'id',
-            'project',
-            'description',
-            'resource',
-            'status',
-            'attributes'
-        ]
+        fields = ["id", "project", "description", "resource", "status", "attributes"]
 
     resource = serializers.SerializerMethodField()
     project = ProjectSerializer()
@@ -49,15 +35,14 @@ class AllocationSerializer(serializers.ModelSerializer):
 
     def get_resource(self, obj: Allocation) -> dict:
         resource = obj.resources.first()
-        return {
-            'name': resource.name,
-            'resource_type': resource.resource_type.name
-        }
+        return {"name": resource.name, "resource_type": resource.resource_type.name}
 
     def get_attributes(self, obj: Allocation):
         attrs = AllocationAttribute.objects.filter(allocation=obj)
         return {
-            a.allocation_attribute_type.name: obj.get_attribute(a.allocation_attribute_type.name)
+            a.allocation_attribute_type.name: obj.get_attribute(
+                a.allocation_attribute_type.name
+            )
             for a in attrs
         }
 
