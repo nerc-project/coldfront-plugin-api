@@ -1,88 +1,27 @@
-from coldfront.core.allocation import signals
-from coldfront.core.allocation.models import (
-    Allocation,
-    AllocationUser,
-    AllocationUserStatusChoice,
-)
+from django_scim.adapters import SCIMGroup
+from django_scim import constants, exceptions
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.models import User
+from coldfront.core.allocation.models import AllocationUser, AllocationUserStatusChoice
 from coldfront.core.project.models import (
     ProjectUser,
     ProjectUserStatusChoice,
     ProjectUserRoleChoice,
 )
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAdminUser
-from rest_framework.response import Response
+from coldfront.core.allocation import signals
 
-from coldfront_plugin_api import auth, utils
+from coldfront_plugin_api import utils
 
 
-def allocation_to_group_view(allocation: Allocation) -> dict:
-    return {
-        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
-        "id": allocation.pk,
-        "displayName": f"Members of allocation {allocation.pk} of project {allocation.project.title}",
-        "members": [
-            {
-                "value": x.user.username,
-                "$ref": x.user.username,
-                "display": x.user.username,
-            }
-            for x in AllocationUser.objects.filter(
-                allocation=allocation, status__name="Active"
-            )
-        ],
-    }
+class SCIMColdfrontGroup(SCIMGroup):
+    id_field = "id"
 
+    def handle_operations(self, operations):
+        allocation = self.obj
+        project = self.obj.project
 
-class ListGroups(APIView):
-    """
-    View to list all groups in the system.
-
-    * Requires token authentication.
-    * Only admin users are able to access this view.
-    """
-
-    authentication_classes = auth.AUTHENTICATION_CLASSES
-    permission_classes = [IsAdminUser]
-
-    def get(self, request, format=None):
-        """
-        Return a list of all groups.
-        """
-        allocations = Allocation.objects.filter(status__name="Active")
-        return Response(
-            [allocation_to_group_view(allocation) for allocation in allocations]
-        )
-
-
-class GroupDetail(APIView):
-    """
-    View to list all groups in the system.
-
-    * Requires token authentication.
-    * Only admin users are able to access this view.
-    """
-
-    authentication_classes = auth.AUTHENTICATION_CLASSES
-    permission_classes = [IsAdminUser]
-
-    def get(self, request, pk, format=None):
-        allocation = Allocation.objects.get(pk=pk)
-        return Response(allocation_to_group_view(allocation))
-
-    def patch(self, request, pk, format=None):
-        if (
-            request.data["schemas"] != ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
-            or request.data.get("path", "members") != "members"
-        ):
-            return Response(status=400)
-
-        allocation = Allocation.objects.get(pk=pk)
-        project = allocation.project
-
-        for operation in request.data["Operations"]:
+        # Implement only add and remove
+        for operation in operations:
             value = operation["value"]
             if isinstance(value, dict):
                 value = [x["value"] for x in operation["value"]["members"]]
@@ -94,7 +33,7 @@ class GroupDetail(APIView):
                     try:
                         user = utils.get_or_fetch_user(username=submitted_user)
                     except ObjectDoesNotExist:
-                        return Response(status=400)
+                        raise exceptions.BadRequestError
 
                     self._set_user_status_on_project(
                         project, user, "Active", "User", True
@@ -120,7 +59,30 @@ class GroupDetail(APIView):
                 # Replace is not implemented yet.
                 raise NotImplementedError
 
-        return Response(allocation_to_group_view(allocation))
+        return
+
+    def to_dict(self):
+        d = {
+            "schemas": [constants.SchemaURI.GROUP],
+            "id": self.obj.pk,
+            "displayName": f"Members of allocation {self.obj.pk} of project {self.obj.project.title}",
+            "members": [
+                {
+                    "value": x.user.username,
+                    "$ref": x.user.username,
+                    "display": x.user.username,
+                }
+                for x in AllocationUser.objects.filter(
+                    allocation=self.obj, status__name="Active"
+                )
+            ],
+        }
+
+        return d
+
+    def from_dict(self, d):
+        # Not needed. Not implemented for now
+        return
 
     @staticmethod
     def _set_user_status_on_allocation(allocation, user, status):

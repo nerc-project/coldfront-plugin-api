@@ -46,7 +46,7 @@ class TestAllocation(base.TestBase):
         }
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(desired_in_response, response.json())
+        self.assertIn(desired_in_response, response.json()["Resources"])
 
     def test_get_group(self):
         user = self.new_user()
@@ -131,3 +131,24 @@ class TestAllocation(base.TestBase):
             "/api/scim/v2/Groups/1234", data={}, format="json"
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_filter_group(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+        allocation = self.new_allocation(project, self.resource, 1)
+
+        response = self.admin_client.get(
+            f'/api/scim/v2/Groups?filter=members.value eq "{user.email}"'
+        )
+        self.assertEqual(response.json()["totalResults"], 0)
+
+        self.new_allocation_user(allocation, user)
+
+        response = self.admin_client.get(
+            f'/api/scim/v2/Groups?filter=members.value eq "{user.email}"'
+        )
+        self.assertEqual(response.json()["totalResults"], 1)
+        group_list = response.json()["Resources"]
+        self.assertIn(project.title, group_list[0]["displayName"])
+        self.assertEqual(len(group_list[0]["members"]), 1)
+        self.assertEqual(group_list[0]["members"][0]["value"], user.email)

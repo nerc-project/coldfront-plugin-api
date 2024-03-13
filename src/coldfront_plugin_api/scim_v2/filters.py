@@ -1,5 +1,5 @@
-from django_scim.filters import UserFilterQuery
-from django_scim.utils import get_user_model
+from django_scim.filters import UserFilterQuery, GroupFilterQuery
+from django_scim.utils import get_user_model, get_group_model
 
 
 class ColdfrontUserFilterQuery(UserFilterQuery):
@@ -29,3 +29,19 @@ class ColdfrontUserFilterQuery(UserFilterQuery):
         ("givenName", None, None): "first_name",
         ("emails", "value", None): "email",
     }
+
+
+class ColdfrontGroupFilterQuery(GroupFilterQuery):
+    """
+    Implements the attribute mapping and joins for the SCIM Group Object
+    Currently allows queries to filter by group (Coldfront Allocation) members
+    I.e filter=members.value eq "test@bu.edu" will return all groups that user test@bu.edu belongs to
+    """
+
+    model_getter = get_group_model
+    attr_map = {("members", "value", None): "auth_user.username"}
+
+    joins = (
+        "INNER JOIN allocation_allocationuser ON allocation_allocationuser.allocation_id = allocation_allocation.id",
+        "LEFT JOIN auth_user ON auth_user.id = allocation_allocationuser.user_id",
+    )
