@@ -9,6 +9,8 @@ from coldfront.core.allocation.models import (
     AllocationUserStatusChoice,
 )
 
+from coldfront.core.field_of_science.models import FieldOfScience
+
 from django.contrib.auth.models import User
 from coldfront.core.project.models import (
     Project,
@@ -73,3 +75,11 @@ class TestBase(TestCase):
             status=AllocationUserStatusChoice.objects.get(name="Active"),
         )
         return au
+
+    @staticmethod
+    def new_field_of_science(description=None):
+        description = description or uuid.uuid4().hex
+        fos, _ = FieldOfScience.objects.get_or_create(
+            is_selectable=True, description=description
+        )
+        return fos
