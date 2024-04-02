@@ -14,7 +14,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
 
     def get_pi(self, obj: Project) -> str:
-        return obj.pi.username
+        return obj.pi.email
 
     def get_field_of_science(self, obj: Project) -> str:
         return obj.field_of_science.description
