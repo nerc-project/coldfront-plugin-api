@@ -13,6 +13,9 @@ Options:
                                   Add users to the `rhods-notebooks` namespace
                                   (TAs/Profs). Requires `oc` command and
                                   cluster admin access to OpenShift.
+  --auth-type                     Method of authentication to Keycloak. Pick either 'secret'
+                                  to use client sercet, or 'oauth2' to use the device
+                                  authorization grant flow"
   --help                          Show this message and exit.
 
 """
@@ -32,29 +35,70 @@ logger = logging.getLogger(__name__)
 
 
 class ScimClient(object):
-    def __init__(
-        self, scim_url, keycloak_url, keycloak_client_id, keycloak_client_secret
-    ):
+    def __init__(self, scim_url, keycloak_url, auth_type):
         self.scim_url = scim_url
         self.keycloak_url = keycloak_url
-        self.keycloak_client_id = keycloak_client_id
-        self.keycloak_client_secret = keycloak_client_secret
+        self.auth_type = auth_type
         self.session = self.refresh_session()
 
     def refresh_session(self):
         """Authenticate as a client with Keycloak to receive an access token."""
+        keycloak_client_id = os.environ.get("CLIENT_ID")
         token_url = f"{self.keycloak_url}/auth/realms/mss/protocol/openid-connect/token"
 
-        r = requests.post(
-            token_url,
-            data={"grant_type": "client_credentials"},
-            auth=HTTPBasicAuth(self.keycloak_client_id, self.keycloak_client_secret),
-        )
-        client_token = r.json()["access_token"]
+        if self.auth_type == "secret":
+            keycloak_client_secret = os.environ.get("CLIENT_SECRET")
+            r = requests.post(
+                token_url,
+                data={"grant_type": "client_credentials"},
+                auth=HTTPBasicAuth(keycloak_client_id, keycloak_client_secret),
+            )
+        elif self.auth_type == "oauth2":
+            device_url = f"{self.keycloak_url}/auth/realms/mss/protocol/openid-connect/auth/device"
+
+            r = requests.post(
+                device_url,
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": keycloak_client_id,
+                },
+            )
+
+            r_json = r.json()
+            device_code = r_json["device_code"]
+            user_code = r_json["user_code"]
+            verification_url = r_json["verification_uri"]
+            poll_interval = float(r_json["interval"])
+
+            print("User code is ", user_code)
+            print("Please login at ", verification_url)
+            print("Waiting for device authentication...")
+
+            token_url = (
+                f"{self.keycloak_url}/auth/realms/mss/protocol/openid-connect/token"
+            )
+            data = {
+                "client_id": keycloak_client_id,
+                "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                "device_code": device_code,
+            }
+
+            r = requests.post(
+                token_url,
+                data=data,
+            )
+
+            while "access_token" not in r.json():
+                time.sleep(poll_interval)
+                r = requests.post(token_url, data=data)
+        else:
+            sys.exit("Invalid authorization method. Please choose 'secret' or 'oauth2'")
+
+        access_token = r.json()["access_token"]
 
         session = requests.session()
         headers = {
-            "Authorization": f"Bearer {client_token}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
         session.headers.update(headers)
@@ -149,12 +193,20 @@ def get_sanitized_name(name):
         "Requires `oc` command and cluster admin access to OpenShift."
     ),
 )
-def main(csv_file, add_to_rhods_notebooks_namespace):
+@click.option(
+    "--auth-type",
+    default="secret",
+    help=(
+        "Method of authentication to Keycloak. Pick either 'secret'"
+        "to use client sercet, or 'oauth2' to use the device "
+        "authorization grant flow. Defaults to secret"
+    ),
+)
+def main(csv_file, add_to_rhods_notebooks_namespace, auth_type):
     client = ScimClient(
         "https://coldfront.mss.mghpcc.org/api/scim/v2",
         "https://keycloak.mss.mghpcc.org",
-        os.environ.get("CLIENT_ID"),
-        os.environ.get("CLIENT_SECRET"),
+        auth_type,
     )
 
     with open(csv_file, newline="") as csvfile:
