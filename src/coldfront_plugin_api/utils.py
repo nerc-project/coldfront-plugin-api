@@ -59,7 +59,7 @@ def is_user_superuser(user: User):
     As a temporary hack, this function will handle raising the appropriate 403 error if
     user is authenticated, but not superuser
     """
-    if user.is_authenticated and not user.is_superuser:
+    if user.is_authenticated and not user.is_staff:
         raise PermissionDenied
     else:
         return user.is_authenticated
