@@ -14,11 +14,12 @@ Options:
                                   (TAs/Profs). Requires `oc` command and
                                   cluster admin access to OpenShift.
   --auth-type                     Method of authentication to Keycloak. Pick either 'secret'
-                                  to use client sercet, or 'oauth2' to use the device
-                                  authorization grant flow"
+                                  to use client sercet, 'oauth2' to use the device
+                                  authorization grant flow, or 'workaround'.
   --help                          Show this message and exit.
 
 """
+
 import csv
 import logging
 import os
@@ -32,6 +33,70 @@ from requests.auth import HTTPBasicAuth
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+KEYCLOAK_URL = "https://keycloak.mss.mghpcc.org"
+KEYCLOAK_USERNAME = os.getenv("KEYCLOAK_USERNAME")
+KEYCLOAK_PASSWORD = os.getenv("KEYCLOAK_PASSWORD")
+IMPERSONATE_USER = ""
+
+
+class KeycloakClient(object):
+    def __init__(self):
+        self.session = requests.session()
+        self._admin_auth()
+
+    @staticmethod
+    def construct_url(realm, path):
+        return f"{KEYCLOAK_URL}/auth/admin/realms/{realm}/{path}"
+
+    @property
+    def url_base(self):
+        return f"{KEYCLOAK_URL}/auth/admin/realms"
+
+    @staticmethod
+    def auth_endpoint(realm):
+        return f"{KEYCLOAK_URL}/auth/realms/{realm}/protocol/openid-connect/auth"
+
+    @staticmethod
+    def token_endpoint(realm):
+        return f"{KEYCLOAK_URL}/auth/realms/{realm}/protocol/openid-connect/token"
+
+    def _admin_auth(self):
+        params = {
+            "grant_type": "password",
+            "client_id": "admin-cli",
+            "username": KEYCLOAK_USERNAME,
+            "password": KEYCLOAK_PASSWORD,
+            "scope": "openid",
+        }
+        r = requests.post(self.token_endpoint("master"), data=params).json()
+        headers = {
+            "Authorization": ("Bearer %s" % r["access_token"]),
+            "Content-Type": "application/json",
+        }
+        self.session.headers.update(headers)
+        return r
+
+    def get_user_id(self, username):
+        self._admin_auth()
+        r = self.session.get(
+            self.construct_url("mss", f"users?username={username}")
+        ).json()
+        return r[0]["id"]
+
+    def impersonate(self, user):
+        self._admin_auth()
+        user = self.get_user_id(user)
+        return self.session.post(
+            self.construct_url("mss", f"users/{user}/impersonation")
+        )
+
+    def get_session_for_user(self, user):
+        user_session = requests.session()
+        user_session.cookies.update(self.impersonate(user).cookies)
+        user_session.get("https://coldfront.mss.mghpcc.org/oidc/authenticate/")
+        return user_session
 
 
 class ScimClient(object):
@@ -53,6 +118,8 @@ class ScimClient(object):
                 data={"grant_type": "client_credentials"},
                 auth=HTTPBasicAuth(keycloak_client_id, keycloak_client_secret),
             )
+        elif self.auth_type == "workaround":
+            return KeycloakClient().get_session_for_user(IMPERSONATE_USER)
         elif self.auth_type == "oauth2":
             device_url = f"{self.keycloak_url}/auth/realms/mss/protocol/openid-connect/auth/device"
 
@@ -202,7 +269,19 @@ def get_sanitized_name(name):
         "authorization grant flow. Defaults to secret"
     ),
 )
-def main(csv_file, add_to_rhods_notebooks_namespace, auth_type):
+@click.option(
+    "--impersonate-user",
+    default="",
+    help="User to impersonate for temporary authentication workaround.",
+)
+def main(csv_file, add_to_rhods_notebooks_namespace, auth_type, impersonate_user):
+    if auth_type == "workaround":
+        if not impersonate_user:
+            raise ValueError("Must provide --impersonate-user argument.")
+
+        global IMPERSONATE_USER
+        IMPERSONATE_USER = impersonate_user
+
     client = ScimClient(
         "https://coldfront.mss.mghpcc.org/api/scim/v2",
         "https://keycloak.mss.mghpcc.org",
