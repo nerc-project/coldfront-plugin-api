@@ -3,9 +3,10 @@ import uuid
 
 from coldfront.core.resource import models as resource_models
 from coldfront.core.user.models import User
+from coldfront_plugin_api.tests import base
 from rest_framework.test import APIClient
 
-from coldfront_plugin_api.tests.unit import base, fakes
+from coldfront_plugin_api.tests.unit import fakes
 
 
 class TestUsers(base.TestBase):

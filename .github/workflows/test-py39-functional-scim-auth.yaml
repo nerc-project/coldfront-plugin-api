@@ -1,0 +1,32 @@
+name: test-py39-functional-scim-auth
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-scim-auth:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Run keycloak container
+        run: |
+          ./ci/run_keycloak.sh
+
+      - name: Install Coldfront and plugin
+        run: |
+          ./ci/setup.sh
+
+      - name: Run SCIM authentication functional test
+        run: |
+          ./ci/run_functional_test_scim_auth.sh

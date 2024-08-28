@@ -6,7 +6,7 @@ from coldfront.core.allocation.models import (
     AllocationUserStatusChoice,
 )
 from coldfront.core.project.models import ProjectUser
-from coldfront_plugin_api.tests.unit import base
+from coldfront_plugin_api.tests import base
 
 from unittest.mock import patch
 
