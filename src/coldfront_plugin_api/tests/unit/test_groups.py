@@ -2,9 +2,10 @@ from unittest import mock
 import uuid
 
 from coldfront.core.resource import models as resource_models
+from coldfront_plugin_api.tests import base
 from rest_framework.test import APIClient
 
-from coldfront_plugin_api.tests.unit import base, fakes
+from coldfront_plugin_api.tests.unit import fakes
 
 
 def get_payload_for_single_operation(operation, username):

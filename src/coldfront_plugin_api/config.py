@@ -14,4 +14,5 @@ SCIM_SERVICE_PROVIDER = {
     "GROUP_ADAPTER": "coldfront_plugin_api.scim_v2.adapter_group.SCIMColdfrontGroup",
     "GROUP_FILTER_PARSER": "coldfront_plugin_api.scim_v2.filters.ColdfrontGroupFilterQuery",
     "GET_IS_AUTHENTICATED_PREDICATE": "coldfront_plugin_api.utils.is_user_superuser",
+    "AUTH_CHECK_MIDDLEWARE": "coldfront_plugin_api.scim_v2.auth_middleware.SCIMColdfrontAuthCheckMiddleware",
 }

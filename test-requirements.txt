@@ -1,1 +1,2 @@
 git+https://github.com/nerc-project/coldfront-plugin-cloud@main#egg=coldfront_plugin_cloud
+git+https://github.com/CCI-MOC/onboarding-tools@master#egg=onboarding_tools
