@@ -17,7 +17,9 @@ class TestAllocation(base.TestBase):
         call_command("register_cloud_attributes")
         sys.stdout = backup
 
-        self.resource = self.new_resource(name="Devstack", auth_url="http://localhost")
+        self.resource = self.new_openstack_resource(
+            name="Devstack", auth_url="http://localhost"
+        )
 
     @staticmethod
     def new_allocation_attribute(allocation, attribute, value):
