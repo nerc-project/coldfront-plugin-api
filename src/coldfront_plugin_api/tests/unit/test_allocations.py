@@ -1,5 +1,7 @@
 from os import devnull
+from datetime import datetime, timedelta
 import sys
+from unittest.mock import patch, ANY
 
 from coldfront.core.allocation import models as allocation_models
 from django.core.management import call_command
@@ -35,6 +37,12 @@ class TestAllocation(base.TestBase):
     @property
     def admin_client(self):
         client = APIClient()
+        client.login(username="admin", password="test1234")
+        return client
+
+    @property
+    def admin_v2_client(self):
+        client = APIClient(headers={"Accept": "application/json; version=2.0"})
         client.login(username="admin", password="test1234")
         return client
 
@@ -146,3 +154,93 @@ class TestAllocation(base.TestBase):
             "/api/allocations?fake_model_attribute=fake"
         ).json()
         self.assertEqual(r_json, [])
+
+    def test_create_allocation(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+
+        payload = {
+            "attributes": [
+                {"attribute_type": "OpenShift Limit on CPU Quota", "value": 8},
+                {"attribute_type": "OpenShift Limit on RAM Quota (MiB)", "value": 16},
+            ],
+            "project": {"id": project.id},
+            "resources": [{"id": self.resource.id}],
+            "status": "New",
+        }
+
+        self.admin_v2_client.post("/api/allocations", payload, format="json")
+
+        created_allocation = allocation_models.Allocation.objects.get(
+            project=project,
+            resources__in=[self.resource],
+        )
+        self.assertEqual(created_allocation.status.name, "New")
+        self.assertEqual(created_allocation.justification, "")
+        self.assertEqual(created_allocation.start_date, datetime.now().date())
+        self.assertEqual(
+            created_allocation.end_date, (datetime.now() + timedelta(days=365)).date()
+        )
+
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=created_allocation,
+            allocation_attribute_type=allocation_models.AllocationAttributeType.objects.get(
+                name="OpenShift Limit on CPU Quota"
+            ),
+            value=8,
+        )
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=created_allocation,
+            allocation_attribute_type=allocation_models.AllocationAttributeType.objects.get(
+                name="OpenShift Limit on RAM Quota (MiB)"
+            ),
+            value=16,
+        )
+
+    def test_update_allocation_status_new_to_active(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+        allocation = self.new_allocation(project, self.resource, 1)
+        allocation.status = allocation_models.AllocationStatusChoice.objects.get(
+            name="New"
+        )
+        allocation.save()
+
+        payload = {"status": "Active"}
+
+        with patch(
+            "coldfront.core.allocation.signals.allocation_activate.send"
+        ) as mock_activate:
+            response = self.admin_v2_client.patch(
+                f"/api/allocations/{allocation.id}?all=true", payload, format="json"
+            )
+            self.assertEqual(response.status_code, 200)
+            allocation.refresh_from_db()
+            self.assertEqual(allocation.status.name, "Active")
+            mock_activate.assert_called_once_with(
+                sender=ANY, allocation_pk=allocation.pk
+            )
+
+    def test_update_allocation_status_active_to_denied(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+        allocation = self.new_allocation(project, self.resource, 1)
+        allocation.status = allocation_models.AllocationStatusChoice.objects.get(
+            name="Active"
+        )
+        allocation.save()
+
+        payload = {"status": "Denied"}
+
+        with patch(
+            "coldfront.core.allocation.signals.allocation_disable.send"
+        ) as mock_disable:
+            response = self.admin_v2_client.patch(
+                f"/api/allocations/{allocation.id}", payload, format="json"
+            )
+            self.assertEqual(response.status_code, 200)
+            allocation.refresh_from_db()
+            self.assertEqual(allocation.status.name, "Denied")
+            mock_disable.assert_called_once_with(
+                sender=ANY, allocation_pk=allocation.pk
+            )

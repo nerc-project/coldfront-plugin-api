@@ -10,7 +10,7 @@ from django_scim import views as scim_views
 from coldfront_plugin_api import auth, serializers
 
 
-class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
+class AllocationViewSet(viewsets.ModelViewSet):
     """
     This viewset implements the API to Coldfront's allocation object
     The API allows filtering allocations by any of Coldfront's allocation model attributes,
@@ -41,9 +41,13 @@ class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
     In cases where an invalid model attribute or AA is queried, an empty list is returned
     """
 
-    serializer_class = serializers.AllocationSerializer
     authentication_classes = auth.AUTHENTICATION_CLASSES
     permission_classes = [IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.request.version == "2.0":
+            return serializers.AllocationSerializerV2
+        return serializers.AllocationSerializer
 
     def get_queryset(self):
         queryset = Allocation.objects.filter(status__name="Active")
