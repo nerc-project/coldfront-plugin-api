@@ -10,7 +10,7 @@ from django_scim import views as scim_views
 from coldfront_plugin_api import auth, serializers
 
 
-class AllocationViewSet(viewsets.ReadOnlyModelViewSet):
+class AllocationViewSet(viewsets.ModelViewSet):
     """
     This viewset implements the API to Coldfront's allocation object
     The API allows filtering allocations by any of Coldfront's allocation model attributes,
