@@ -7,7 +7,7 @@ if [[ ! "${CI}" == "true" ]]; then
 fi
 
 python -m pip install --upgrade pip
-pip3 install -r test-requirements.txt
 pip3 install -e .
+pip3 install -r test-requirements.txt
 
 ./ci/patch_coldfront_urls.sh
