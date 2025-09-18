@@ -106,7 +106,7 @@ class TestAllocation(base.TestBase):
         ).json()
         self.assertEqual(len(r_json), 3)
         self.assertEqual(
-            r_json[0]["resource"]["resource_type"], self.resource.resource_type.name
+            r_json[0]["resources"][0]["resource_type"], self.resource.resource_type.name
         )
 
         # Filter by 1 attribute with conditional or
@@ -118,8 +118,11 @@ class TestAllocation(base.TestBase):
                 aa3.value,
             )
         ).json()
+        r_attribute_dict = {
+            a["attribute_type"]: a["value"] for a in r_json[0]["attributes"]
+        }
         self.assertEqual(len(r_json), 3)
-        self.assertIn(attributes.QUOTA_LIMITS_CPU, r_json[0]["attributes"])
+        self.assertIn(attributes.QUOTA_LIMITS_CPU, r_attribute_dict)
 
         # Filter by two allocation attributes, with conditional or
         r_json = self.admin_client.get(
@@ -130,12 +133,13 @@ class TestAllocation(base.TestBase):
                 aa4.value,
             )
         ).json()
+        r_attribute_dict = {
+            a["attribute_type"]: a["value"] for a in r_json[0]["attributes"]
+        }
         self.assertEqual(len(r_json), 1)
+        self.assertEqual(r_attribute_dict[attributes.QUOTA_LIMITS_CPU], str(aa1.value))
         self.assertEqual(
-            r_json[0]["attributes"][attributes.QUOTA_LIMITS_CPU], aa1.value
-        )
-        self.assertEqual(
-            r_json[0]["attributes"][attributes.QUOTA_LIMITS_MEMORY], aa4.value
+            r_attribute_dict[attributes.QUOTA_LIMITS_MEMORY], str(aa4.value)
         )
 
         # Filter by non-existant attribute
@@ -146,3 +150,82 @@ class TestAllocation(base.TestBase):
             "/api/allocations?fake_model_attribute=fake"
         ).json()
         self.assertEqual(r_json, [])
+
+    def test_create_allocation(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+
+        payload = {
+            "attributes": [
+                {"attribute_type": "OpenShift Limit on CPU Quota", "value": 8},
+                {"attribute_type": "OpenShift Limit on RAM Quota (MiB)", "value": 16},
+            ],
+            "project": {"id": project.id},
+            "resources": [{"id": self.resource.id}],
+            "status": "New",
+        }
+
+        self.admin_client.post("/api/allocations", payload, format="json")
+
+        created_allocation = allocation_models.Allocation.objects.get(
+            project=project,
+            resources__in=[self.resource],
+        )
+        self.assertEqual(created_allocation.status.name, "New")
+
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=created_allocation,
+            allocation_attribute_type=allocation_models.AllocationAttributeType.objects.get(
+                name="OpenShift Limit on CPU Quota"
+            ),
+            value=8,
+        )
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=created_allocation,
+            allocation_attribute_type=allocation_models.AllocationAttributeType.objects.get(
+                name="OpenShift Limit on RAM Quota (MiB)"
+            ),
+            value=16,
+        )
+
+    def test_update_allocation(self):
+        user = self.new_user()
+        project = self.new_project(pi=user)
+        allocation = self.new_allocation(project, self.resource, 1)
+
+        # Add initial attributes
+        self.new_allocation_attribute(allocation, "OpenShift Limit on CPU Quota", 4)
+        self.new_allocation_attribute(
+            allocation, "OpenShift Limit on RAM Quota (MiB)", 8
+        )
+
+        payload = {
+            "attributes": [
+                {
+                    "attribute_type": "OpenShift Limit on CPU Quota",
+                    "value": 8,
+                },  # update CPU
+                {
+                    "attribute_type": "OpenShift Limit on RAM Quota (MiB)",
+                    "value": 16,
+                },  # update RAM
+            ],
+        }
+
+        response = self.admin_client.patch(
+            f"/api/allocations/{allocation.id}", payload, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        updated_allocation = allocation_models.Allocation.objects.get(id=allocation.id)
+
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=updated_allocation,
+            allocation_attribute_type__name="OpenShift Limit on CPU Quota",
+            value=8,
+        )
+        allocation_models.AllocationAttribute.objects.get(
+            allocation=updated_allocation,
+            allocation_attribute_type__name="OpenShift Limit on RAM Quota (MiB)",
+            value=16,
+        )
