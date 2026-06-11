@@ -1,4 +1,5 @@
 from os import devnull
+import logging
 import sys
 
 from coldfront.core.allocation import models as allocation_models
@@ -17,9 +18,11 @@ class TestAllocation(base.TestBase):
         call_command("register_cloud_attributes")
         sys.stdout = backup
 
-        self.resource = self.new_openstack_resource(
-            name="Devstack", auth_url="http://localhost"
-        )
+        self.resource = self.new_openshift_resource(name="Microshift")
+
+        logging.disable(logging.CRITICAL)
+        call_command("register_default_quotas", apply=True)
+        logging.disable(logging.NOTSET)
 
     @staticmethod
     def new_allocation_attribute(allocation, attribute, value):

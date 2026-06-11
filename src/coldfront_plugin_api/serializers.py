@@ -1,17 +1,27 @@
 from rest_framework import serializers
 
 from coldfront.core.allocation.models import Allocation, AllocationAttribute
-from coldfront.core.allocation.models import Project
+from coldfront.core.project.models import Project, ProjectAttribute
 
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = ["id", "title", "pi", "description", "field_of_science", "status"]
+        fields = [
+            "id",
+            "title",
+            "pi",
+            "description",
+            "field_of_science",
+            "status",
+            "attributes",
+        ]
 
     pi = serializers.SerializerMethodField()
     field_of_science = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    # is_externally_funded = serializers.SerializerMethodField()
+    attributes = serializers.SerializerMethodField()
 
     def get_pi(self, obj: Project) -> str:
         return obj.pi.email
@@ -21,6 +31,20 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj: Project) -> str:
         return obj.status.name
+
+    def get_attributes(self, obj: Project):
+        attrs = ProjectAttribute.objects.filter(project=obj)
+        return {a.proj_attr_type.name: a.value for a in attrs}
+
+    # def get_is_externally_funded(self, obj: Project) -> bool | None:
+    #     is_externally_funded_attr = ProjectAttribute.objects.filter(
+    #         project=obj, proj_attr_type__name="Is Externally Funded"
+    #     ).first()
+    #     return (
+    #         is_externally_funded_attr.value.lower() == "yes"
+    #         if is_externally_funded_attr
+    #         else None
+    #     )
 
 
 class AllocationSerializer(serializers.ModelSerializer):
